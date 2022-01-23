@@ -1,26 +1,89 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
+import Button from './components/Button';
+import Input from './components/Input';
+// import { participantUser } from './utils/db';
+import surpriseBox, { surpriseBoxReturn } from './utils/surpriseBox';
 import './App.css';
 
-function App() {
+const App: React.FC<{}> = (): JSX.Element => {
+  const [inputvalue, setInputVal] = useState<string>('');
+  const [{ alreadyExist, winnerMessage, looserMessage }, setMessage] = useState<{
+            alreadyExist: boolean;
+            winnerMessage: boolean;
+            looserMessage: boolean;
+        }>({
+          alreadyExist: false,
+          winnerMessage: false,
+          looserMessage: false,
+        });
+
+  const setMessageAndClearIt = (
+    stateValue: any,
+    timer: number,
+    setState: React.Dispatch<React.SetStateAction<any>>,
+  ): void => {
+    setState((previousData: any) => ({
+      ...previousData,
+      [stateValue]: true,
+    }));
+    setTimeout(() => {
+      setMessage((previousData) => ({
+        ...previousData,
+        [stateValue]: false,
+      }));
+    }, timer);
+  };
+
+  const handleSubmit = (event: React.SyntheticEvent): void => {
+    event.preventDefault();
+    const surpriseBoxResponse: surpriseBoxReturn = surpriseBox(inputvalue);
+
+    if (surpriseBoxResponse === surpriseBoxReturn.ALREADY_EXISTS) {
+      setMessageAndClearIt('alreadyExist', 3000, setMessage);
+      setInputVal('');
+      return;
+    }
+    if (surpriseBoxResponse === surpriseBoxReturn.WINNER) {
+      setMessageAndClearIt('winnerMessage', 3000, setMessage);
+      setInputVal('');
+      return;
+    }
+    setMessageAndClearIt('looserMessage', 3000, setMessage);
+    setInputVal('');
+  };
+
+  const handleInputChange = (e: React.FormEvent<HTMLInputElement>): void => {
+    setInputVal(e.currentTarget.value);
+  };
+
+  useEffect(() => {
+    console.log('<<<<< ', alreadyExist, winnerMessage, looserMessage);
+  }, [alreadyExist, winnerMessage, looserMessage]);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
+      <form onSubmit={handleSubmit}>
+        <Input
+          inputVal={inputvalue}
+          handleInputChange={handleInputChange}
+        />
+        <Button text="Submit User" type="submit" />
+      </form>
+      {alreadyExist && (
+        <p style={{ color: 'red' }}>User Already Exists</p>
+      )}
+      {winnerMessage && (
+        <p style={{ color: 'lightgreen' }}>
+          Congrants!, You win the Game
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      )}
+      {looserMessage && (
+        <p style={{ color: 'orange' }}>
+          oops, you loose Better luck next time
+        </p>
+      )}
     </div>
   );
-}
+};
 
 export default App;
